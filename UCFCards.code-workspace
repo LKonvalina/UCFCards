@@ -1,0 +1,25 @@
+{
+  "folders": [
+    {
+      "name": "UCFCards",
+      "path": "."
+    },
+    {
+      "name": "Client",
+      "path": "client"
+    },
+    {
+      "name": "Server",
+      "path": "server"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    }
+  }
+}

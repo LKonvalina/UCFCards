@@ -1,0 +1,14 @@
+node_modules/
+ucfcards-release.tar.gz
+release/
+dist/
+build/
+coverage/
+server/coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage/
+.vite/

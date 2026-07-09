@@ -1,0 +1,19 @@
+[Unit]
+Description=UCFCards Blackjack API and Socket.IO server
+After=network.target
+
+[Service]
+Type=simple
+User=ucfcards
+Group=ucfcards
+WorkingDirectory=/var/www/ucfcards/server
+EnvironmentFile=/var/www/ucfcards/server/.env
+ExecStart=/usr/bin/node src/index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ucfcards
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,117 @@
+name: Deploy to GCP Compute Engine
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Pre-deploy tests
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install server dependencies
+        run: npm ci
+        working-directory: server
+
+      - name: Run server tests
+        run: npm run test:ci
+        working-directory: server
+        env:
+          NODE_ENV: test
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Run client tests
+        run: npm test
+        working-directory: client
+
+  deploy:
+    name: Deploy MERN stack to GCE
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build release archive
+        run: bash deploy/scripts/build-release.sh
+        env:
+          PUBLIC_URL: ${{ secrets.PUBLIC_URL }}
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Upload release bundle
+        run: |
+          gcloud compute scp ucfcards-release.tar.gz \
+            "${{ secrets.GCE_INSTANCE_NAME }}:/tmp/ucfcards-release.tar.gz" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --zone "${{ secrets.GCE_ZONE }}"
+
+          gcloud compute scp deploy/scripts/deploy-remote.sh \
+            "${{ secrets.GCE_INSTANCE_NAME }}:/tmp/deploy-remote.sh" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --zone "${{ secrets.GCE_ZONE }}"
+
+      - name: Run remote deployment
+        env:
+          CLIENT_ORIGIN: ${{ secrets.PUBLIC_URL }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+        run: |
+          gcloud compute ssh "${{ secrets.GCE_INSTANCE_NAME }}" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --zone "${{ secrets.GCE_ZONE }}" \
+            --command "sudo CLIENT_ORIGIN='${CLIENT_ORIGIN}' MONGODB_URI='${MONGODB_URI}' CLERK_SECRET_KEY='${CLERK_SECRET_KEY}' bash /tmp/deploy-remote.sh"
+
+      - name: Verify deployment health
+        run: |
+          gcloud compute ssh "${{ secrets.GCE_INSTANCE_NAME }}" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --zone "${{ secrets.GCE_ZONE }}" \
+            --command "curl -fsS http://127.0.0.1/api/health"
+
+      - name: Deployment summary
+        run: |
+          echo "Deployed UCFCards to ${{ secrets.PUBLIC_URL }}"
+          echo "Trigger: ${{ github.event_name }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "Merged PR: #${{ github.event.pull_request.number }}"
+          fi

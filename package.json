@@ -1,0 +1,18 @@
+{
+  "name": "blackjack-learning-tournament",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client",
+    "test": "npm run test:server",
+    "test:server": "npm run test --prefix server",
+    "test:client": "npm run test --prefix client",
+    "test:all": "npm run test:server && npm run test:client",
+    "ci": "npm run test:server && npm run test:client && cross-env VITE_CLERK_PUBLISHABLE_KEY=pk_test_ci_placeholder npm run build --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0"
+  }
+}
