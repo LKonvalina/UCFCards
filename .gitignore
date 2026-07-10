@@ -12,3 +12,4 @@ server/coverage/
 .DS_Store
 coverage/
 .vite/
+*.code-workspace
