@@ -8,7 +8,7 @@ Deploys the UCFCards MERN stack to a single GCP VM running **Nginx** (static Rea
 Internet
    |
    v
-Nginx :80
+Nginx :80 / :443
    |-- /              -> /var/www/ucfcards/client (Vite build)
    |-- /api/*         -> Node.js :5000 (Express)
    '-- /socket.io/*   -> Node.js :5000 (WebSocket upgrade)
@@ -21,7 +21,7 @@ Clerk OAuth            -> CLERK_SECRET_KEY / VITE_CLERK_PUBLISHABLE_KEY
 ## One-time VM setup
 
 1. Create a **Compute Engine** VM (Ubuntu 22.04+, e2-small or larger).
-2. Allow HTTP/HTTPS and SSH in the VPC firewall.
+2. Allow HTTP/HTTPS and SSH in the VPC firewall (TCP **22**, **80**, and **443**).
 3. SSH into the VM and run:
 
 ```bash
@@ -50,7 +50,7 @@ sudo bash bootstrap-gce.sh
 | `GCP_PROJECT_ID` | `my-gcp-project` | GCP project |
 | `GCE_INSTANCE_NAME` | `ucfcards-mvp` | VM name |
 | `GCE_ZONE` | `us-central1-a` | VM zone |
-| `PUBLIC_URL` | `http://35.123.45.67` | Public site URL (also used for Vite build) |
+| `PUBLIC_URL` | `https://cards.example.com` | Public site URL (also used for Vite build) |
 | `MONGODB_URI` | `mongodb+srv://...` | Atlas connection string |
 | `CLERK_SECRET_KEY` | `sk_live_...` | Clerk backend key |
 | `VITE_CLERK_PUBLISHABLE_KEY` | `pk_live_...` | Clerk frontend key (build-time) |
@@ -82,6 +82,56 @@ Typical flow:
 2. Reviewer approves PR
 3. Merge PR → **Deploy** workflow runs tests again, then deploys
 4. If `production` environment has required reviewers, deploy waits for approval
+
+## Enable HTTPS (Let's Encrypt)
+
+Browsers and Clerk expect HTTPS in production. You need a **DNS domain** pointing at the VM (Let's Encrypt does not issue trusted certs for a bare IP alone).
+
+1. Create an **A record**: `cards.yourdomain.com` → VM external IP.
+2. Open GCP firewall TCP **443**.
+3. On the VM:
+
+```bash
+# Copy enable-https.sh from the repo, then:
+sudo DOMAIN=cards.yourdomain.com EMAIL=you@example.com bash /tmp/enable-https.sh
+```
+
+Or from a cloned repo:
+
+```bash
+cd ~/UCFCards
+sudo DOMAIN=cards.yourdomain.com EMAIL=you@example.com bash deploy/scripts/enable-https.sh
+```
+
+4. Point the app at HTTPS:
+
+```bash
+sudo sed -i 's|^CLIENT_ORIGIN=.*|CLIENT_ORIGIN=https://cards.yourdomain.com|' /var/www/ucfcards/server/.env
+sudo systemctl restart ucfcards
+```
+
+5. Rebuild the client with HTTPS URLs (Vite bakes these in at build time):
+
+```bash
+cd ~/UCFCards/client
+npm ci
+export VITE_API_URL="https://cards.yourdomain.com/api"
+export VITE_SOCKET_URL="https://cards.yourdomain.com"
+export VITE_CLERK_PUBLISHABLE_KEY="pk_live_or_test_..."
+npm run build
+sudo rm -rf /var/www/ucfcards/client/*
+sudo cp -R dist/. /var/www/ucfcards/client/
+sudo chown -R ucfcards:ucfcards /var/www/ucfcards/client
+```
+
+6. Add `https://cards.yourdomain.com` in **Clerk → Domains**.
+7. Verify:
+
+```bash
+curl -fsS https://cards.yourdomain.com/api/health
+```
+
+Certificates renew automatically via `certbot.timer`.
 
 ## Manual deploy (local)
 

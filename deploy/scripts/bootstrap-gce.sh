@@ -10,7 +10,7 @@ echo "Bootstrapping GCP Compute Engine host for UCFCards"
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y curl ca-certificates gnupg nginx rsync tar
+apt-get install -y curl ca-certificates gnupg nginx rsync tar certbot python3-certbot-nginx
 
 if ! command -v node >/dev/null 2>&1 || [[ "$(node -v)" != v22* ]]; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
