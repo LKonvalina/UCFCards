@@ -1,9 +1,7 @@
 name: Deploy to GCP Compute Engine
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     branches:
       - main
       - master
@@ -16,7 +14,6 @@ concurrency:
 jobs:
   test:
     name: Pre-deploy tests
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -50,7 +47,6 @@ jobs:
   deploy:
     name: Deploy MERN stack to GCE
     needs: test
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production
@@ -108,10 +104,14 @@ jobs:
             --zone "${{ secrets.GCE_ZONE }}" \
             --command "curl -fsS http://127.0.0.1/api/health"
 
+      - name: Verify public deployment
+        env:
+          PUBLIC_URL: ${{ secrets.PUBLIC_URL }}
+        run: curl -fsS --retry 5 --retry-delay 5 "${PUBLIC_URL%/}/api/health"
+
       - name: Deployment summary
         run: |
           echo "Deployed UCFCards to ${{ secrets.PUBLIC_URL }}"
           echo "Trigger: ${{ github.event_name }}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "Merged PR: #${{ github.event.pull_request.number }}"
-          fi
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"

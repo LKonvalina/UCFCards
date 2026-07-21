@@ -28,4 +28,4 @@ systemctl enable nginx
 systemctl start nginx
 
 echo "Bootstrap complete."
-echo "Next: configure GitHub secrets and merge an approved PR to deploy."
+echo "Next: configure GitHub secrets and push to main to deploy."
