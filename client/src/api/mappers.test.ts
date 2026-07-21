@@ -5,6 +5,7 @@ import type { ServerGameState } from './mappers';
 describe('api mappers', () => {
   it('maps server game state into the client game contract', () => {
     const serverState: ServerGameState = {
+      roundNumber: 2,
       players: [
         {
           id: 'p1',
@@ -38,9 +39,59 @@ describe('api mappers', () => {
     }, 'p1');
 
     expect(game.id).toBe('table-1');
+    expect(game.roundNumber).toBe(2);
     expect(game.turnDurationSeconds).toBe(15);
     expect(game.players[0].hand[0].suit).toBe('HEARTS');
     expect(game.playerHand).toHaveLength(1);
+  });
+
+  it('derives the current user and active turn from neutral socket state', () => {
+    const serverState: ServerGameState = {
+      roundNumber: 1,
+      players: [
+        {
+          id: 'p1',
+          name: 'Host',
+          initials: 'HO',
+          chips: 1000,
+          hand: [],
+          handTotal: 12,
+          status: 'Your Turn',
+          result: null,
+          isCurrentUser: true,
+        },
+        {
+          id: 'p2',
+          name: 'Guest',
+          initials: 'GU',
+          chips: 1000,
+          hand: [],
+          handTotal: 18,
+          status: 'Playing',
+          result: null,
+        },
+      ],
+      dealerHand: [],
+      phase: 'player-turn',
+      currentPlayerId: 'p2',
+      currentPlayerIndex: 1,
+      turnStartedAt: null,
+      turnExpiresAt: null,
+      turnDurationSeconds: 15,
+      result: null,
+      message: "p2's turn",
+    };
+
+    const game = mapServerGameState(serverState, 'table-1', {
+      name: 'Test Table',
+      startingChips: 1000,
+      rounds: 5,
+      createdAt: '2026-07-07T12:00:00.000Z',
+      roundNumber: 0,
+    }, 'p2');
+
+    expect(game.players[0]).toMatchObject({ id: 'p1', isCurrentUser: false, status: 'Playing' });
+    expect(game.players[1]).toMatchObject({ id: 'p2', isCurrentUser: true, status: 'Your Turn' });
   });
 
   it('maps leaderboard rows with ranks', () => {

@@ -159,7 +159,6 @@ export const apiClient = {
     const mapped = mapLobbyResponse(lobby, tableMeta, user);
 
     if (lobby.status === 'in_progress') {
-      tableMeta.roundNumber = 1;
       mapped.game = mapServerGameState(lobby.gameState, tableId, tableMeta, user.id);
     }
 
@@ -194,7 +193,6 @@ export const apiClient = {
     const mapped = mapLobbyResponse(lobby, tableMeta, user);
 
     if (lobby.status === 'in_progress') {
-      tableMeta.roundNumber = 1;
       mapped.game = mapServerGameState(lobby.gameState, tableId, tableMeta, user.id);
     }
 
@@ -218,7 +216,6 @@ export const apiClient = {
       method: 'POST',
     });
 
-    meta.roundNumber += 1;
     return mapServerGameState(lobby.gameState, activeTableId, meta, user.id);
   },
 
