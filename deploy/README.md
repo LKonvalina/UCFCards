@@ -73,15 +73,14 @@ Set `CLIENT_ORIGIN` to the same value as `PUBLIC_URL` (the deploy script does th
 
 | Trigger | Behavior |
 |---------|----------|
-| **Merged PR** to `main`/`master` | Runs tests, then deploys (after environment approval if configured) |
+| **Push** to `main`/`master` | Runs tests, then deploys (after environment approval if configured) |
 | **Manual** `workflow_dispatch` | Same pipeline, triggered from Actions tab |
 
 Typical flow:
 
 1. Open PR → **CI** workflow runs tests
-2. Reviewer approves PR
-3. Merge PR → **Deploy** workflow runs tests again, then deploys
-4. If `production` environment has required reviewers, deploy waits for approval
+2. Merge or push to `main` → **Deploy** workflow runs tests again, then deploys
+3. If `production` environment has required reviewers, deploy waits for approval
 
 ## Enable HTTPS (Let's Encrypt)
 
