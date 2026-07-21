@@ -132,6 +132,9 @@ curl -fsS https://cards.yourdomain.com/api/health
 
 Certificates renew automatically via `certbot.timer`.
 
+Once Certbot has added the HTTPS server block, later application deployments preserve that
+Nginx configuration instead of replacing it with the initial HTTP-only template.
+
 ## Manual deploy (local)
 
 ```bash

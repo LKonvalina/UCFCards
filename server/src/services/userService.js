@@ -9,6 +9,29 @@ const getPrimaryEmail = (clerkUser) => {
   return primary ?? clerkUser.emailAddresses?.[0] ?? null;
 };
 
+const isVerified = (entry) => entry?.verification?.status === "verified";
+
+export const resolveClerkEmail = (clerkUser) => {
+  const primaryEmail = getPrimaryEmail(clerkUser);
+  const externalEmail = clerkUser.externalAccounts?.find((entry) => entry.emailAddress) ?? null;
+  const email = primaryEmail?.emailAddress ?? externalEmail?.emailAddress ?? "";
+  const normalizedEmail = email.toLowerCase();
+
+  const matchingEmailAddresses = clerkUser.emailAddresses?.filter(
+    (entry) => entry.emailAddress?.toLowerCase() === normalizedEmail
+  ) ?? [];
+  const matchingExternalAccounts = clerkUser.externalAccounts?.filter(
+    (entry) => entry.emailAddress?.toLowerCase() === normalizedEmail
+  ) ?? [];
+
+  return {
+    email,
+    emailVerified:
+      Boolean(email) &&
+      [...matchingEmailAddresses, ...matchingExternalAccounts].some(isVerified)
+  };
+};
+
 const buildFullName = (clerkUser, email) => {
   const parts = [clerkUser.firstName, clerkUser.lastName].filter(Boolean);
 
@@ -24,9 +47,11 @@ const buildFullName = (clerkUser, email) => {
 };
 
 export const upsertUserFromClerk = async (clerkUser) => {
-  const primaryEmail = getPrimaryEmail(clerkUser);
-  const email = primaryEmail?.emailAddress ?? "";
-  const emailVerified = primaryEmail?.verification?.status === "verified";
+  const { email, emailVerified } = resolveClerkEmail(clerkUser);
+
+  if (!email) {
+    throw new Error("The signed-in Clerk user does not have an email address.");
+  }
 
   return User.findOneAndUpdate(
     { clerkId: clerkUser.id },
