@@ -53,7 +53,7 @@ sudo bash bootstrap-gce.sh
 | `PUBLIC_URL` | `https://cards.example.com` | Public site URL (also used for Vite build) |
 | `MONGODB_URI` | `mongodb+srv://...` | Atlas connection string |
 | `CLERK_SECRET_KEY` | `sk_live_...` | Clerk backend key |
-| `VITE_CLERK_PUBLISHABLE_KEY` | `pk_live_...` | Clerk frontend key (build-time) |
+| `VITE_CLERK_PUBLISHABLE_KEY` | `pk_live_...` | Clerk publishable key used by both the frontend build and backend authentication |
 
 ### GitHub Environment: `production`
 

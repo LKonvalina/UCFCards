@@ -31,6 +31,7 @@ export type TournamentPlayer = {
 
 export type Tournament = {
   id: string;
+  hostUserId: string;
   name: string;
   playerCount: number;
   startingChips: number;

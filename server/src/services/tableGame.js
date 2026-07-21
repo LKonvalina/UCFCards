@@ -31,8 +31,8 @@ const emitError = (io, socket, message) => {
 
 const tableIdFrom = (ctx) => ctx.table._id.toString();
 
-const emitTableState = (io, ctx, userId = null) => {
-  const state = buildGameState(ctx.view, userId);
+const emitTableState = (io, ctx) => {
+  const state = buildGameState(ctx.view);
   io.to(`table:${tableIdFrom(ctx)}`).emit("table:state", state);
   return state;
 };
@@ -209,6 +209,9 @@ export const startRoundForTable = async (io, tableDoc) => {
   if (!["waiting", "finished"].includes(view.status)) {
     throw new Error("A round is already in progress.");
   }
+  if (view.status === "finished" && view.roundNumber >= view.rounds) {
+    throw new Error("This tournament has completed all scheduled rounds.");
+  }
 
   clearTurnTimer(tableIdFrom(ctx));
 
@@ -255,7 +258,7 @@ export const joinTablePlayer = async (io, tableId, userId, name) => {
   await persistTableContext(ctx);
 
   io.to(`table:${tableId}`).emit("table:join", { tableId, userId, rejoin: isAlreadySeated });
-  emitTableState(io, ctx, userId);
+  emitTableState(io, ctx);
   emitLeaderboard(io, ctx);
   return ctx;
 };
@@ -270,7 +273,7 @@ export const leaveTablePlayer = async (io, tableId, userId) => {
     view.message = `${userId} disconnected`;
     await persistTableContext(ctx);
     io.to(`table:${tableId}`).emit("table:leave", { tableId, userId, disconnected: true });
-    emitTableState(io, ctx, userId);
+    emitTableState(io, ctx);
     return ctx;
   }
 
@@ -285,7 +288,7 @@ export const leaveTablePlayer = async (io, tableId, userId) => {
 
   await persistTableContext(ctx);
   io.to(`table:${tableId}`).emit("table:leave", { tableId, userId });
-  emitTableState(io, ctx, userId);
+  emitTableState(io, ctx);
   emitLeaderboard(io, ctx);
   return ctx;
 };
@@ -327,7 +330,7 @@ export const exitTablePlayer = async (io, tableId, userId) => {
   }
 
   await persistTableContext(ctx);
-  emitTableState(io, ctx, userId);
+  emitTableState(io, ctx);
   emitLeaderboard(io, ctx);
   return ctx;
 };

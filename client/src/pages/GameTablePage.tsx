@@ -28,7 +28,7 @@ function getSecondsLeft(expiresAt: string | null, now: number) {
 }
 
 export function GameTablePage() {
-  const { game, tournament, hit, stand, newRound, navigate, loadingLabel, leaveTable } = useApp();
+  const { game, tournament, user, hit, stand, newRound, navigate, loadingLabel, leaveTable } = useApp();
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -48,6 +48,10 @@ export function GameTablePage() {
   const currentUserSeat = useMemo(() => game?.players.find((player) => player.isCurrentUser) ?? null, [game]);
   const secondsLeft = getSecondsLeft(game?.turnExpiresAt ?? null, now);
   const isRoundComplete = game?.phase === 'round-complete';
+  const isHost = tournament?.hostUserId === user?.id;
+  const tournamentComplete = Boolean(
+    isRoundComplete && tournament && game && game.roundNumber >= tournament.rounds,
+  );
   const isCurrentUsersTurn = game?.phase === 'player-turn' && Boolean(currentPlayer?.isCurrentUser);
   const isLoading = Boolean(loadingLabel);
 
@@ -196,9 +200,17 @@ export function GameTablePage() {
             <Button variant="secondary" onClick={stand} disabled={!canAct} aria-label="Stand and end your turn">
               Stand
             </Button>
-            <Button variant="ghost" onClick={newRound} disabled={isLoading} aria-label="Start a new round">
-              New Round
-            </Button>
+            {isRoundComplete && isHost && !tournamentComplete ? (
+              <Button variant="ghost" onClick={newRound} disabled={isLoading} aria-label="Start a new round">
+                New Round
+              </Button>
+            ) : null}
+            {isRoundComplete && !isHost && !tournamentComplete ? (
+              <span className="round-message" role="status">Waiting for the host to deal the next round.</span>
+            ) : null}
+            {tournamentComplete ? (
+              <span className="round-message" role="status">Tournament complete.</span>
+            ) : null}
           </div>
         </div>
 

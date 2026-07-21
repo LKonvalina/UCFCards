@@ -3,7 +3,7 @@ import { StatCard } from '../components/StatCard/StatCard';
 import { useApp } from '../state/AppContext';
 
 export function LobbyPage() {
-  const { tournament, startRound, joinOpenTournament, loadingLabel, leaveTable } = useApp();
+  const { tournament, user, startRound, joinOpenTournament, loadingLabel, leaveTable } = useApp();
 
   if (!tournament) {
     return (
@@ -13,6 +13,11 @@ export function LobbyPage() {
       </section>
     );
   }
+
+  const isHost = tournament.hostUserId === user?.id;
+  const seatedPlayers = tournament.players.filter((player) => player.status === 'Ready').length;
+  const seatsRemaining = Math.max(0, tournament.playerCount - seatedPlayers);
+  const canStartRound = isHost && seatsRemaining === 0 && !loadingLabel;
 
   return (
     <section className="page content-page">
@@ -41,9 +46,15 @@ export function LobbyPage() {
       </section>
 
       <div className="page-actions">
-        <Button size="lg" onClick={startRound} disabled={Boolean(loadingLabel)} aria-label="Start blackjack round">
-          Start Round
-        </Button>
+        {isHost ? (
+          <Button size="lg" onClick={startRound} disabled={!canStartRound} aria-label="Start blackjack round">
+            {seatsRemaining > 0
+              ? `Waiting for ${seatsRemaining} player${seatsRemaining === 1 ? '' : 's'}`
+              : 'Start Round'}
+          </Button>
+        ) : (
+          <p className="round-message" role="status">Waiting for the host to start the round.</p>
+        )}
         <Button
           variant="secondary"
           onClick={() => leaveTable('Leave this tournament lobby and return to the dashboard?')}
