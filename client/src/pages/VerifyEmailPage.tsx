@@ -18,8 +18,8 @@ export function VerifyEmailPage() {
       <div className="auth-card">
         <p className="section-eyebrow">Email Verification</p>
         <h1>Verify your email to join tournaments.</h1>
-        <p className="auth-card__email">{user.email}</p>
-        <p>Open the verification link sent to your inbox, then refresh your status here.</p>
+        {user.email ? <p className="auth-card__email">{user.email}</p> : null}
+        <p>Check your account's verification status, then refresh it here.</p>
 
         {user.emailVerified ? (
           <>
