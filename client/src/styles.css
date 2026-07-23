@@ -657,6 +657,65 @@ p {
   border-radius: var(--radius);
 }
 
+.bot-setup {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+}
+
+.bot-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.bot-add-row select {
+  min-height: 48px;
+  flex: 1 1 160px;
+  padding: 0.7rem 0.8rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.bot-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bot-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.8rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.bot-list button {
+  padding: 0.3rem 0.7rem;
+  color: var(--coral);
+  background: var(--coral-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .lobby-list {
   display: grid;
   gap: 0.75rem;

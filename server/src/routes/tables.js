@@ -4,6 +4,7 @@ import TournamentSchedule from "../models/TournamentSchedule.js";
 import { requireUser } from "../middleware/auth.js";
 import { buildGameState, buildLeaderboard } from "../game/gameState.js";
 import { ensureSeatedPlayer } from "../services/tableStore.js";
+import { seatBots } from "../game/bots.js";
 import { listJoinableTables } from "../services/openTables.js";
 import {
   exitTablePlayer,
@@ -52,6 +53,10 @@ router.post("/", requireUser, async (req, res) => {
     joinedPlayers: [req.userId]
   });
   await ensureSeatedPlayer(table, req.userId, req.body?.displayName ?? req.body?.name);
+
+  if (Array.isArray(req.body.bots) && req.body.bots.length > 0) {
+    await seatBots(table, req.body.bots);
+  }
 
   return res.status(201).json({ tableId: table._id });
 });

@@ -24,6 +24,7 @@ import {
 } from "./tableStore.js";
 import { clearTurnTimer, scheduleTurnTimer, startTurnClock } from "./turnTimer.js";
 import { createSocketAuthMiddleware, resolveSocketUserId } from "../middleware/socketAuth.js";
+import { isBot, runBotTurn } from "../game/bots.js";
 
 const emitError = (io, socket, message) => {
   socket.emit("error", { message });
@@ -60,6 +61,12 @@ const beginPlayerTurn = (io, ctx) => {
 
   const current = view.players[view.turnIndex];
   if (!current || current.status !== "playing") return;
+
+  //if  seat is a bot let the bot module play its turn using the same hit/stand functions
+  if (isBot(current.userId)) {
+    runBotTurn(io, ctx, { playerHit, playerStand });
+    return;
+  }
 
   startTurnClock(ctx.table);
   view.turnStartedAt = ctx.table.turnStartedAt;
