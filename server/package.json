@@ -8,6 +8,7 @@
     "dev": "cross-env NODE_ENV=dev nodemon -r dotenv/config src/index.js",
     "start": "cross-env NODE_ENV=prod node src/index.js",
     "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles",
+    "playtest": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js bots.playtest --runInBand",
     "test:ci": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --detectOpenHandles --ci --coverage"
   },
   "dependencies": {

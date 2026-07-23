@@ -39,11 +39,14 @@ export type Tournament = {
   players: TournamentPlayer[];
 };
 
+export type BotDifficulty = 'easy' | 'medium' | 'hard';
+
 export type TournamentInput = {
   name: string;
   playerCount: number;
   startingChips: number;
   rounds: 3 | 5 | 10;
+  bots: BotDifficulty[];
 };
 
 export type OpenTable = {

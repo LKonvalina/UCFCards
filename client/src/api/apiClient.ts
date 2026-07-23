@@ -140,6 +140,7 @@ export const apiClient = {
         name: input.name,
         startingChips: input.startingChips,
         rounds: input.rounds,
+        bots: input.bots,
         displayName: user.name,
       },
     });
