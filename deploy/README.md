@@ -53,7 +53,7 @@ sudo bash bootstrap-gce.sh
 | `PUBLIC_URL` | `https://cards.example.com` | Public site URL (also used for Vite build) |
 | `MONGODB_URI` | `mongodb+srv://...` | Atlas connection string |
 | `CLERK_SECRET_KEY` | `sk_live_...` | Clerk backend key |
-| `VITE_CLERK_PUBLISHABLE_KEY` | `pk_live_...` | Clerk frontend key (build-time) |
+| `VITE_CLERK_PUBLISHABLE_KEY` | `pk_live_...` | Clerk publishable key used by both the frontend build and backend authentication |
 
 ### GitHub Environment: `production`
 
@@ -73,15 +73,14 @@ Set `CLIENT_ORIGIN` to the same value as `PUBLIC_URL` (the deploy script does th
 
 | Trigger | Behavior |
 |---------|----------|
-| **Merged PR** to `main`/`master` | Runs tests, then deploys (after environment approval if configured) |
+| **Push** to `main`/`master` | Runs tests, then deploys (after environment approval if configured) |
 | **Manual** `workflow_dispatch` | Same pipeline, triggered from Actions tab |
 
 Typical flow:
 
 1. Open PR → **CI** workflow runs tests
-2. Reviewer approves PR
-3. Merge PR → **Deploy** workflow runs tests again, then deploys
-4. If `production` environment has required reviewers, deploy waits for approval
+2. Merge or push to `main` → **Deploy** workflow runs tests again, then deploys
+3. If `production` environment has required reviewers, deploy waits for approval
 
 ## Enable HTTPS (Let's Encrypt)
 
@@ -132,6 +131,9 @@ curl -fsS https://cards.yourdomain.com/api/health
 ```
 
 Certificates renew automatically via `certbot.timer`.
+
+Once Certbot has added the HTTPS server block, later application deployments preserve that
+Nginx configuration instead of replacing it with the initial HTTP-only template.
 
 ## Manual deploy (local)
 

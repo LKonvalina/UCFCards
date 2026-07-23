@@ -11,6 +11,7 @@ NODE_ENV="${NODE_ENV:-prod}"
 PORT="${PORT:-5000}"
 CLIENT_ORIGIN="${CLIENT_ORIGIN:?CLIENT_ORIGIN is required}"
 MONGODB_URI="${MONGODB_URI:?MONGODB_URI is required}"
+CLERK_PUBLISHABLE_KEY="${CLERK_PUBLISHABLE_KEY:?CLERK_PUBLISHABLE_KEY is required}"
 CLERK_SECRET_KEY="${CLERK_SECRET_KEY:?CLERK_SECRET_KEY is required}"
 
 if [[ ! -f "${ARCHIVE_PATH}" ]]; then
@@ -33,6 +34,7 @@ NODE_ENV=${NODE_ENV}
 PORT=${PORT}
 CLIENT_ORIGIN=${CLIENT_ORIGIN}
 MONGODB_URI=${MONGODB_URI}
+CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
 CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
 EOF
 
@@ -41,7 +43,11 @@ sudo chmod 600 "${DEPLOY_DIR}/server/.env"
 sudo chmod +x "${DEPLOY_DIR}/deploy-remote.sh"
 
 sudo cp "${DEPLOY_DIR}/deploy/ucfcards.service" "/etc/systemd/system/${SERVICE_NAME}.service"
-sudo cp "${DEPLOY_DIR}/deploy/nginx-ucfcards.conf" "${NGINX_SITE}"
+if [[ -f "${NGINX_SITE}" ]] && sudo grep -qE 'listen[[:space:]]+443([[:space:]]|;)' "${NGINX_SITE}"; then
+  echo "Preserving the existing HTTPS-enabled Nginx configuration."
+else
+  sudo cp "${DEPLOY_DIR}/deploy/nginx-ucfcards.conf" "${NGINX_SITE}"
+fi
 sudo ln -sf "${NGINX_SITE}" "${NGINX_ENABLED}"
 sudo rm -f /etc/nginx/sites-enabled/default
 

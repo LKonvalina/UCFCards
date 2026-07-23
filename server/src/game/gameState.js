@@ -91,6 +91,7 @@ export const buildGameState = (table, currentUserId = null) => {
     : null;
 
   return {
+    roundNumber: plain.roundNumber ?? 0,
     players,
     dealerHand,
     phase: mapPhase(plain.phase),

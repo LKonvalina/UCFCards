@@ -31,6 +31,7 @@ export type ServerTablePlayer = {
 };
 
 export type ServerGameState = {
+  roundNumber: number;
   players: ServerTablePlayer[];
   dealerHand: ServerCard[];
   phase: GamePhase;
@@ -125,6 +126,7 @@ export function mapLobbyToTournament(
 ): Tournament {
   return {
     id: String(lobby.id),
+    hostUserId: lobby.hostUserId,
     name: meta.name,
     playerCount: lobby.expectedPlayers,
     startingChips: meta.startingChips,
@@ -140,13 +142,30 @@ export function mapServerGameState(
   meta: TableSessionMeta,
   userId: string,
 ): GameState {
-  const currentUser = state.players.find((player) => player.id === userId) ?? state.players.find((player) => player.isCurrentUser);
+  const players = state.players.map((player) => {
+    const isCurrentUser = player.id === userId;
+    const isActivePlayer = state.phase === 'player-turn' && player.id === state.currentPlayerId;
+    const status = isActivePlayer
+      ? isCurrentUser
+        ? ('Your Turn' as const)
+        : ('Playing' as const)
+      : player.status === 'Your Turn'
+        ? ('Playing' as const)
+        : player.status;
+
+    return {
+      ...player,
+      status,
+      isCurrentUser,
+    };
+  });
+  const currentUser = players.find((player) => player.isCurrentUser);
   const result = state.result ?? currentUser?.result ?? null;
 
   return {
     id: tableId,
     tournamentId: tableId,
-    roundNumber: meta.roundNumber,
+    roundNumber: state.roundNumber ?? meta.roundNumber,
     playerHand: currentUser?.hand ?? [],
     dealerHand: state.dealerHand,
     shoe: [],
@@ -155,7 +174,7 @@ export function mapServerGameState(
     message: state.message,
     chipDelta: result ? chipDeltaForResult(result) : 0,
     playerChips: currentUser?.chips ?? meta.startingChips,
-    players: state.players,
+    players,
     currentPlayerId: state.currentPlayerId,
     currentPlayerIndex: state.currentPlayerIndex,
     turnStartedAt: state.turnStartedAt,

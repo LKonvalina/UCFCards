@@ -1,9 +1,7 @@
 name: Deploy to GCP Compute Engine
 
 on:
-  pull_request:
-    types:
-      - closed
+  push:
     branches:
       - main
       - master
@@ -16,7 +14,6 @@ concurrency:
 jobs:
   test:
     name: Pre-deploy tests
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -50,7 +47,6 @@ jobs:
   deploy:
     name: Deploy MERN stack to GCE
     needs: test
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production
@@ -94,24 +90,29 @@ jobs:
         env:
           CLIENT_ORIGIN: ${{ secrets.PUBLIC_URL }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
         run: |
           gcloud compute ssh "${{ secrets.GCE_INSTANCE_NAME }}" \
             --project "${{ secrets.GCP_PROJECT_ID }}" \
             --zone "${{ secrets.GCE_ZONE }}" \
-            --command "sudo CLIENT_ORIGIN='${CLIENT_ORIGIN}' MONGODB_URI='${MONGODB_URI}' CLERK_SECRET_KEY='${CLERK_SECRET_KEY}' bash /tmp/deploy-remote.sh"
+            --command "sudo CLIENT_ORIGIN='${CLIENT_ORIGIN}' MONGODB_URI='${MONGODB_URI}' CLERK_PUBLISHABLE_KEY='${CLERK_PUBLISHABLE_KEY}' CLERK_SECRET_KEY='${CLERK_SECRET_KEY}' bash /tmp/deploy-remote.sh"
 
       - name: Verify deployment health
         run: |
           gcloud compute ssh "${{ secrets.GCE_INSTANCE_NAME }}" \
             --project "${{ secrets.GCP_PROJECT_ID }}" \
             --zone "${{ secrets.GCE_ZONE }}" \
-            --command "curl -fsS http://127.0.0.1/api/health"
+            --command 'for attempt in $(seq 1 12); do curl -fsS http://127.0.0.1/api/health && exit 0; sleep 5; done; sudo systemctl status ucfcards --no-pager --full || true; sudo journalctl -u ucfcards -n 100 --no-pager || true; exit 1'
+
+      - name: Verify public deployment
+        env:
+          PUBLIC_URL: ${{ secrets.PUBLIC_URL }}
+        run: curl -fsS --retry 12 --retry-delay 5 --retry-all-errors "${PUBLIC_URL%/}/api/health"
 
       - name: Deployment summary
         run: |
           echo "Deployed UCFCards to ${{ secrets.PUBLIC_URL }}"
           echo "Trigger: ${{ github.event_name }}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "Merged PR: #${{ github.event.pull_request.number }}"
-          fi
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"

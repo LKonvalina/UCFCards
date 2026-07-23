@@ -80,7 +80,7 @@ If any job fails, the workflow reports a breaking change and blocks the PR merge
 
 ### Deploy pipeline (`.github/workflows/deploy.yml`)
 
-Runs when an **approved PR is merged** to `main`/`master`, or manually via **Actions → Deploy to GCP Compute Engine**.
+Runs after every **push** to `main`/`master`, or manually via **Actions → Deploy to GCP Compute Engine**.
 
 Deploy steps:
 
@@ -88,7 +88,7 @@ Deploy steps:
 2. Build the React app with production Clerk/API URLs
 3. Package the MERN release and upload to GCP Compute Engine
 4. Configure Nginx + systemd on the VM and restart services
-5. Verify `GET /api/health`
+5. Verify `GET /api/health` both on the VM and through the public URL
 
 See [deploy/README.md](deploy/README.md) for GCP VM bootstrap, GitHub secrets, and the `production` environment approval gate.
 

@@ -9,8 +9,15 @@ export const createApp = ({ clientOrigin = "http://localhost:5173", enableClerk 
   app.use(cors({ origin: clientOrigin, credentials: true }));
   app.use(express.json());
 
-  if (enableClerk && process.env.CLERK_SECRET_KEY && process.env.NODE_ENV !== "test") {
-    app.use(clerkMiddleware());
+  if (enableClerk && process.env.NODE_ENV !== "test") {
+    const publishableKey = process.env.CLERK_PUBLISHABLE_KEY;
+    const secretKey = process.env.CLERK_SECRET_KEY;
+
+    if (!publishableKey || !secretKey) {
+      throw new Error("CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY are required.");
+    }
+
+    app.use(clerkMiddleware({ publishableKey, secretKey }));
   }
 
   app.get("/api/health", (_req, res) => {

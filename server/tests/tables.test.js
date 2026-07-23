@@ -118,6 +118,57 @@ describe("table routes", () => {
     expect(rejoinRes.body.gameState.phase).toBe("player-turn");
   });
 
+  test("passes action control from the host to the next player", async () => {
+    const createRes = await request(app)
+      .post("/api/tables")
+      .set("x-test-user-id", "host")
+      .send({ playerCount: 2 });
+
+    const tableId = createRes.body.tableId;
+    await request(app).post(`/api/tables/${tableId}/join`).set("x-test-user-id", "host").send();
+    const guestJoinRes = await request(app)
+      .post(`/api/tables/${tableId}/join`)
+      .set("x-test-user-id", "guest")
+      .send();
+
+    expect(guestJoinRes.body.gameState.currentPlayerId).toBe("host");
+
+    const hostStandRes = await request(app)
+      .post(`/api/tables/${tableId}/action`)
+      .set("x-test-user-id", "host")
+      .send({ action: "stand" });
+
+    expect(hostStandRes.status).toBe(200);
+    expect(hostStandRes.body.gameState.currentPlayerId).toBe("guest");
+
+    queueDeckApiCards([
+      { code: "2H", value: "2", suit: "HEARTS", image: "https://deckofcardsapi.com/static/img/2H.png" },
+      { code: "10C", value: "10", suit: "CLUBS", image: "https://deckofcardsapi.com/static/img/10C.png" }
+    ]);
+
+    const guestHitRes = await request(app)
+      .post(`/api/tables/${tableId}/action`)
+      .set("x-test-user-id", "guest")
+      .send({ action: "hit" });
+
+    expect(guestHitRes.status).toBe(200);
+    expect(guestHitRes.body.gameState.currentPlayerId).toBe("guest");
+    expect(guestHitRes.body.gameState.players.find((player) => player.id === "guest")).toMatchObject({
+      status: "Your Turn",
+      isCurrentUser: true,
+      handTotal: 15
+    });
+
+    const guestStandRes = await request(app)
+      .post(`/api/tables/${tableId}/action`)
+      .set("x-test-user-id", "guest")
+      .send({ action: "stand" });
+
+    expect(guestStandRes.status).toBe(200);
+    expect(guestStandRes.body.gameState.phase).toBe("round-complete");
+    expect(guestStandRes.body.gameState.currentPlayerId).toBeNull();
+  });
+
   test("player can leave a waiting table without closing it when others remain", async () => {
     const createRes = await request(app)
       .post("/api/tables")

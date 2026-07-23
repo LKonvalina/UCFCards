@@ -10,6 +10,7 @@ describe("game state shape", () => {
       turnStartedAt: new Date("2026-07-07T12:00:00.000Z"),
       turnExpiresAt: new Date("2026-07-07T12:00:15.000Z"),
       turnDurationSeconds: TURN_DURATION_SECONDS,
+      roundNumber: 3,
       message: "Round started",
       dealerHand: [{ value: "ACE", suit: "SPADES", code: "AS", image: "https://deckofcardsapi.com/static/img/AS.png" }],
       players: [
@@ -25,6 +26,7 @@ describe("game state shape", () => {
 
     const state = buildGameState(table, "p1");
     expect(state.phase).toBe("player-turn");
+    expect(state.roundNumber).toBe(3);
     expect(state.currentPlayerId).toBe("p1");
     expect(state.players[0]).toMatchObject({
       id: "p1",
